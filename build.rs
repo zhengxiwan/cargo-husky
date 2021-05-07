@@ -38,7 +38,7 @@ impl fmt::Debug for Error {
             Error::OutDir(env::VarError::NotUnicode(msg)) => msg.to_string_lossy().to_string(),
             Error::InvalidUserHooksDir(path) => {
                 format!("User hooks directory is not found or no executable file is found in '{:?}'. Did you forget to make a hook script executable?", path)
-	        }
+            }
             Error::EmptyUserHook(path) => format!("User hook script is empty: {:?}", path),
         };
         write!(f, "{}", msg)
@@ -186,6 +186,12 @@ fn install_hook(hook: &str) -> Result<()> {
     let hook_path = {
         let mut p = resolve_gitdir()?;
         p.push("hooks");
+
+        // Check if .git/hooks exists and create it if not
+        if !p.exists() {
+            fs::create_dir(p.as_path())?;
+        }
+
         p.push(hook);
         p
     };
@@ -287,6 +293,10 @@ fn install_user_hooks() -> Result<()> {
     }
 
     let hooks_dir = git_dir.join("hooks");
+    // Check if .git/hooks exists and create it if not
+    if !hooks_dir.exists() {
+        fs::create_dir(hooks_dir.as_path())?;
+    }
     for path in hook_paths {
         install_user_hook(&path, &hooks_dir)?;
     }
